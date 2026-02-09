@@ -1,0 +1,55 @@
+Import-Module ActiveDirectory
+
+try {
+    $usuario = Read-Host "Digite a matrícula ou login do usuário"
+
+    $user = Get-ADUser -Identity $usuario -Server "domain-AD" -Properties `
+        MemberOf,
+        AccountExpirationDate,
+        Enabled,
+        PasswordNeverExpires,
+        CannotChangePassword,
+        PasswordLastSet,
+        LockedOut -ErrorAction Stop
+
+    Write-Host "`n================ DADOS DO USUÁRIO ================" -ForegroundColor Cyan
+    Write-Host "Nome: $($user.Name)"
+    Write-Host "Login: $($user.SamAccountName)"
+    Write-Host "Conta habilitada: $($user.Enabled)"
+    Write-Host "Conta bloqueada: $($user.LockedOut)"
+
+    if ($user.AccountExpirationDate) {
+        Write-Host "Vencimento da conta: $($user.AccountExpirationDate)"
+    } else {
+        Write-Host "Vencimento da conta: Não expira"
+    }
+
+    Write-Host "`n================ OPÇÕES DA CONTA ================" -ForegroundColor Cyan
+    Write-Host "Senha nunca expira: $($user.PasswordNeverExpires)"
+    Write-Host "Usuário não pode alterar senha: $($user.CannotChangePassword)"
+    Write-Host "Última alteração de senha: $($user.PasswordLastSet)"
+
+    Write-Host "`n================ MEMBRO DE ================" -ForegroundColor Cyan
+
+    if ($user.MemberOf.Count -gt 0) {
+        $user.MemberOf | ForEach-Object {
+            (Get-ADGroup $_).Name
+        } | Sort-Object | ForEach-Object {
+            Write-Host "- $_"
+        }
+    } else {
+        Write-Host "Usuário não pertence a nenhum grupo."
+    }
+
+}
+catch {
+    Write-Host "`n? Erro ao consultar usuário." -ForegroundColor Red
+    Write-Host $_.Exception.Message -ForegroundColor DarkRed
+}
+
+Write-Host "`n========================================" -ForegroundColor DarkGray
+Write-Host " Desenvolvido por Kenedy Matheus" -ForegroundColor Yellow
+Write-Host "========================================`n" -ForegroundColor DarkGray
+
+# PAUSA FINAL (impede fechar a janela)
+Read-Host "Pressione ENTER para sair"
